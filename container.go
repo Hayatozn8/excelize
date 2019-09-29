@@ -85,3 +85,22 @@ func (xlc *xlContainer) LoadBook(path string) (*File, error) {
 func (bk *File) GetSheet(sheetName string) (*xlsxWorksheet, error) {
 	return bk.workSheetReader(sheetName)
 }
+
+//XlBook
+//
+
+/*
+XlSheet
+set：
+	value
+	image
+	formula
+get：
+	value
+
+activate_cell
+used_range
+used_range_address_str
+used_range_address_inttuple
+used_range_value
+/*
