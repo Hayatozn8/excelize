@@ -205,6 +205,13 @@ func (bk *xlBook) CopySheetByName(from, to string) error {
 	return bk.bkApp.copySheet(fromIndex, toIndex)
 }
 
+func (bk *xlBook) NewSheet(sheetName string) (*xlSheet, error) {
+	bk.bkApp.NewSheet(sheetName)
+
+	// save in sheetCollection
+	return bk.initSheetApp(sheetName)
+}
+
 func (bk *xlBook) Save() error {
 	return bk.bkApp.Save()
 }
@@ -215,18 +222,33 @@ func (bk *xlBook) SaveAs(path string) error {
 
 //sheetName <--> sheetIndex
 func (bk *xlBook) GetSheet(sheetName string) (*xlSheet, error) {
-	app, err := bk.bkApp.workSheetReader(sheetName)
+	// get sheet from sheetCollection
+	sheetName = trimSheetName(sheetName)
+	if xls, has := bk.sheetCollection[sheetName]; has{
+		return xls, nil
+	}
+
+	// save in sheetCollection
+	return bk.initSheetApp(sheetName)
+}
+
+
+func (bk *xlBook) initSheetApp(trimedSheetName string) (*xlSheet, error) {
+	xlsApp, err := bk.bkApp.workSheetReader(trimedSheetName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &xlSheet{
-		sheetApp:     app,
+	xls := &xlSheet{
+		sheetApp:     xlsApp,
 		activate_row: 1,
 		activate_col: 1,
-	}, nil
-}
+	}
 
+	bk.sheetCollection[trimedSheetName] = xls
+
+	return xls, nil
+}
 ///////////////////////////////////////////////////////////////////////////////// sheet
 /*
 container.bk
@@ -360,3 +382,4 @@ func RangeToCoord(xlrange string) ([]int, error) {
 		return nil, errors.New("can not analyse range")
 	}
 }
+
