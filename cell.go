@@ -99,6 +99,45 @@ func (f *File) SetCellValue(sheet, axis string, value interface{}) error {
 	return err
 }
 
+func (f *File) SetCellValues(sheet, axis string, values interface{}) error{
+	rangeVal := reflect.ValueOf(values)
+	valKind := v.Kind()
+
+	col, row, err := CellNameToCoordinates(axis)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < rangeVal.Len(); i++{
+		
+	}
+
+	// if valKind != reflect.Slice {
+	// 	if valKind == reflect.Ptr {
+	// 		return SetCellValue(sheet, axis, values)
+	// 	} else {
+	// 		v.Elem().Kind() == reflect.Slice
+	// 	}
+		
+	// }
+
+	// // != [][] && （ptr 
+
+	// // ptr && [][]
+	// // [][]
+	// if  valKind != reflect.Slice{
+
+	// } else if valKind == reflect.Ptr && v.Elem().Kind() == reflect.Slice {
+	// 	rangeVal = rangeVal.Elem()
+
+	// } else {
+	// 	return 
+	// }
+
+	
+
+}
+
 // setCellIntFunc is a wrapper of SetCellInt.
 func (f *File) setCellIntFunc(sheet, axis string, value interface{}) error {
 	var err error
