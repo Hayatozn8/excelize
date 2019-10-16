@@ -2297,7 +2297,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	cellData, col, _, err := f.prepareCell(xlsx, sheet, axis)
+	cellData, col, _, err := f.prepareCell(xlsx, axis)
 	if err != nil {
 		return 0, err
 	}
