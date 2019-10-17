@@ -15,10 +15,12 @@ import (
 	"reflect"
 )
 
+// write tow dimension slice or array
+// evert element represents a row
 func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 	rangeVal := reflect.ValueOf(values)
-
-	if rangeVal.Kind() != reflect.Slice {
+	rangeValKind := rangeVal.Kind()
+	if rangeValKind != reflect.Slice && rangeValKind != reflect.Array{
 		return errors.New("pointer to slice expected")
 	}
 
@@ -44,7 +46,7 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 			rowValKind = rowVal.Kind()
 		}
 
-		if rowValKind != reflect.Slice {
+		if rowValKind != reflect.Slice && rowValKind != reflect.Array{
 			cell, err := CoordinatesToCellName(startCol, startRow+i)
 			if err != nil {
 				return err
@@ -70,3 +72,8 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 	return nil
 
 }
+
+// func (f *File) GetRangeValue(sheet, start string) ([][]string, error) {
+// 	GetRows
+// 	xlsx.SheetData.Rows
+// }
