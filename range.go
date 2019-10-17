@@ -11,14 +11,17 @@ package excelize
 
 import (
 	"errors"
+	"fmt"
 	_ "fmt"
 	"reflect"
 )
 
+// write tow dimension slice or array
+// evert element represents a row
 func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 	rangeVal := reflect.ValueOf(values)
-
-	if rangeVal.Kind() != reflect.Slice {
+	rangeValKind := rangeVal.Kind()
+	if rangeValKind != reflect.Slice && rangeValKind != reflect.Array {
 		return errors.New("pointer to slice expected")
 	}
 
@@ -44,7 +47,7 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 			rowValKind = rowVal.Kind()
 		}
 
-		if rowValKind != reflect.Slice {
+		if rowValKind != reflect.Slice && rowValKind != reflect.Array {
 			cell, err := CoordinatesToCellName(startCol, startRow+i)
 			if err != nil {
 				return err
@@ -69,4 +72,132 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 	}
 	return nil
 
+}
+
+func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
+	// split row and col
+	// var vrow, vcol, hrow, hcol int
+
+	// if hcell == "" {
+	// 	hcol, hrow = -1, -1
+	// } else {
+	// 	hcol, hrow, err := CellNameToCoordinates(hcell)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+
+	// if vcell == "" {
+	// 	vcol, vrow = -1, -1
+	// } else {
+	// 	vcol, vrow, err := CellNameToCoordinates(vcell)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+
+	// // get rows
+	// rows, err := f.Rows(sheet)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// // get length of row (max row)
+	// maxRow = len(rows.rows)
+
+	/////////
+	hcol, hrow, err := CellNameToCoordinates(hcell)
+	if err != nil {
+		return nil, err
+	}
+
+	vcol, vrow, err := CellNameToCoordinates(vcell)
+	if err != nil {
+		return nil, err
+	}
+
+	// Normalize the coordinate area, such correct C1:B3 to B1:C3.
+	if vcol < hcol {
+		vcol, hcol = hcol, vcol
+	}
+
+	if vrow < hrow {
+		vrow, hrow = hrow, vrow
+	}
+
+	hcolIdx := hcol - 1
+	hrowIdx := hrow - 1
+
+	vcolIdx := vcol - 1
+	vrowIdx := vrow - 1
+
+	// 假设有：单元自动补全
+
+	// 单元格拆分 by ":"
+	// "a1:b4" [a1, b4] row,col,row,col
+	// "a1:" [a1,""] row,col
+	// "a1" [a1] row, col
+
+	// GetRows 获取所有有效行
+	// rows, err := f.Rows(sheet)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// if results := make([][]string, 0, 64)
+	// for i:=
+	// 从有效行有截取
+	// 从指定位置开始取值 超过的部分都是空的 行是空行， 列跳过
+
+	xlsx, err := f.workSheetReader(sheet)
+	if err != nil {
+		return nil, err
+	}
+	prepareSheetXML(xlsx, vcol, vrow)
+	makeContiguousColumns(xlsx, hrow, vrow, vcol)
+
+	maxRow := len(xlsx.SheetData.Row)
+	if hrow > maxRow {
+		return nil, nil
+	} else if vrow > maxRow {
+		vrow = maxRow
+		vrowIdx = vrow - 1
+	}
+
+	results := make([][]string, 0, vrow-hrow+1)
+
+	zeroRowCount := 0
+	currencyVcolIdx := 0
+	d := f.sharedStringsReader()
+	for r := hrowIdx; r <= vrowIdx; r++ {
+		fmt.Println("idx", r)
+		row := xlsx.SheetData.Row[r]
+		maxCol := len(row.C)
+
+		//如果当前行的有效列为0，则跳过读取
+		if hcol > maxCol {
+			zeroRowCount++
+			results = append(results, make([]string, 0))
+			continue
+		} else if vrow > maxCol {
+			currencyVcolIdx = maxCol - 1
+		} else {
+			currencyVcolIdx = vcolIdx
+		}
+
+		columns := make([]string, currencyVcolIdx-hcolIdx+1)
+		colIdx := 0
+		for k := hcolIdx; k <= currencyVcolIdx; k++ {
+			val, _ := row.C[k].getValueFrom(f, d)
+			columns[colIdx] = val
+			colIdx++
+		}
+		results = append(results, columns)
+	}
+
+	if zeroRowCount == maxRow {
+		return nil, nil
+	}
+
+	return results, nil
 }
