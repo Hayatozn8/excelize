@@ -50,17 +50,9 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 				return err
 			}
 
-			cellData, col, row, err := f.prepareCell(xlsx, cell)
-			if err != nil {
+			if err := f.setCellValue(xlsx, cell, rowVal.Interface()); err != nil {
 				return err
 			}
-
-			if err := f.setCellValue(xlsx, cellData, col, row, rowVal.Interface()); err != nil {
-				return err
-			}
-			// if err := f.SetCellValue(sheet, cell, rowVal.Interface()); err != nil {
-			// 	return err
-			// }
 			continue
 		}
 
@@ -70,18 +62,9 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 				return err
 			}
 
-			cellData, col, row, err := f.prepareCell(xlsx, cell)
-			if err != nil {
+			if err := f.setCellValue(xlsx, cell, rowVal.Index(j).Interface()); err != nil {
 				return err
 			}
-
-			if err := f.setCellValue(xlsx, cellData, col, row, rowVal.Index(j).Interface()); err != nil {
-				return err
-			}
-
-			// if err := f.SetCellValue(sheet, cell, rowVal.Index(j).Interface()); err != nil {
-			// 	return err
-			// }
 		}
 	}
 	return nil
