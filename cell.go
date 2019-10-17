@@ -530,6 +530,11 @@ func (f *File) MergeCell(sheet, hcell, vcell string) error {
 //     err := f.SetSheetRow("Sheet1", "B6", &[]interface{}{"1", nil, 2})
 //
 func (f *File) SetSheetRow(sheet, axis string, slice interface{}) error {
+	xlsx, err := f.workSheetReader(sheet)
+	if err != nil {
+		return err
+	}
+
 	col, row, err := CellNameToCoordinates(axis)
 	if err != nil {
 		return err
@@ -549,7 +554,7 @@ func (f *File) SetSheetRow(sheet, axis string, slice interface{}) error {
 		if err != nil {
 			return err
 		}
-		if err := f.SetCellValue(sheet, cell, v.Index(i).Interface()); err != nil {
+		if err := f.setCellValue(xlsx, cell, v.Index(i).Interface()); err != nil {
 			return err
 		}
 	}
