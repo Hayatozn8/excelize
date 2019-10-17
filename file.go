@@ -15,9 +15,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"errors"
-
-	"github.com/Hayatozn8/mygoutil"
 )
 
 // NewFile provides a function to create new file by default template. For
@@ -138,43 +135,3 @@ func NewFileWithSheet(sheetNames ...string) *File {
 
 	return f
 }
-
-func CopyBook(from, to string) error {
-	// check from file
-	has, err := mygoutil.PathExits(from)
-	if err != nil {
-		return err
-	} else if !has {
-		return errors.New("[from] file is not exist, can not do copy." +
-			"from file path: %s" + from)
-	}
-
-	// check to file
-	has, err = mygoutil.PathExits(to)
-	if err != nil {
-		return err
-	} else if has {
-		return errors.New("[to]] file is  exist, can not do copy." +
-			"to file path: %s" + from)
-	}
-
-	// open from file
-	fromFile, err := os.Open(from)
-	if err != nil {
-		return err
-	}
-	defer fromFile.Close()
-
-	// open to file
-	toFile, err := os.Create(to)
-	if err != nil {
-		return err
-	}
-	defer toFile.Close()
-
-	// copy
-	_, err = io.Copy(toFile, fromFile)
-
-	return err
-}
-
