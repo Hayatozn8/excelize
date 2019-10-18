@@ -11,7 +11,6 @@ package excelize
 
 import (
 	"errors"
-	"fmt"
 	_ "fmt"
 	"reflect"
 )
@@ -105,7 +104,6 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 	// // get length of row (max row)
 	// maxRow = len(rows.rows)
 
-	/////////
 	hcol, hrow, err := CellNameToCoordinates(hcell)
 	if err != nil {
 		return nil, err
@@ -153,9 +151,8 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	prepareSheetXML(xlsx, vcol, vrow)
-	makeContiguousColumns(xlsx, hrow, vrow, vcol)
 
+	//Prevent hrow out of maxRow
 	maxRow := len(xlsx.SheetData.Row)
 	if hrow > maxRow {
 		return nil, nil
@@ -164,38 +161,46 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 		vrowIdx = vrow - 1
 	}
 
-	results := make([][]string, 0, vrow-hrow+1)
+	// Init result
+	results := make([][]string, vrowIdx-hrowIdx+1)
 
-	zeroRowCount := 0
-	currencyVcolIdx := 0
+	nullRowCount := 0
+	currentVcolIdx := 0
+	resultIdx := 0
+
 	d := f.sharedStringsReader()
 	for r := hrowIdx; r <= vrowIdx; r++ {
-		fmt.Println("idx", r)
-		row := xlsx.SheetData.Row[r]
-		maxCol := len(row.C)
+		//get row from sheet
+		sheetRow := xlsx.SheetData.Row[r]
+		maxCol := len(sheetRow.C)
 
-		//如果当前行的有效列为0，则跳过读取
+		//Prevent hcol out of maxCol
 		if hcol > maxCol {
-			zeroRowCount++
+			nullRowCount++
 			results = append(results, make([]string, 0))
 			continue
 		} else if vrow > maxCol {
-			currencyVcolIdx = maxCol - 1
+			currentVcolIdx = maxCol - 1
 		} else {
-			currencyVcolIdx = vcolIdx
+			currentVcolIdx = vcolIdx
 		}
 
-		columns := make([]string, currencyVcolIdx-hcolIdx+1)
+		// make columns data
+		columns := make([]string, currentVcolIdx-hcolIdx+1)
 		colIdx := 0
-		for k := hcolIdx; k <= currencyVcolIdx; k++ {
-			val, _ := row.C[k].getValueFrom(f, d)
+		for k := hcolIdx; k <= currentVcolIdx; k++ {
+			val, _ := sheetRow.C[k].getValueFrom(f, d)
 			columns[colIdx] = val
 			colIdx++
 		}
-		results = append(results, columns)
+
+		// save columns data
+		results[resultIdx] = columns
+		resultIdx++
 	}
 
-	if zeroRowCount == maxRow {
+	// Return nil if all row is null
+	if nullRowCount == maxRow {
 		return nil, nil
 	}
 
