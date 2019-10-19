@@ -87,6 +87,36 @@ func SplitCellName(cell string) (string, int, error) {
 	return "", -1, newInvalidCellNameError(cell)
 }
 
+func SplitCellStr(cell string) (string, int, error) {
+	alpha := func(r rune) bool {
+		return ('A' <= r && r <= 'Z') || ('a' <= r && r <= 'z')
+	}
+
+	var rowStr string
+	var col string
+
+	//Get col
+	if strings.IndexFunc(cell, alpha) == 0 {
+		i := strings.LastIndexFunc(cell, alpha)
+		col = cell[:i+1]
+		rowStr = cell[i+1:]
+	} else {
+		col = ""
+		rowStr = cell
+	}
+
+	//Get row
+	if rowStr == "" {
+		return col, -1, nil
+	} else {
+		if row, err := strconv.Atoi(rowStr); err == nil && row > 0 {
+			return col, row, nil
+		}
+	}
+
+	return "", -1, newInvalidCellNameError(cell)
+}
+
 // JoinCellName joins cell name from column name and row number.
 func JoinCellName(col string, row int) (string, error) {
 	normCol := strings.Map(func(rune rune) rune {
@@ -168,6 +198,27 @@ func CellNameToCoordinates(cell string) (int, int, error) {
 	colname, row, err := SplitCellName(cell)
 	if err != nil {
 		return -1, -1, fmt.Errorf(msg, cell, err)
+	}
+
+	col, err := ColumnNameToNumber(colname)
+	if err != nil {
+		return -1, -1, fmt.Errorf(msg, cell, err)
+	}
+
+	return col, row, nil
+}
+
+func CellStrToCoordinates(cell string) (int, int, error) {
+	const msg = "cannot convert cell %q to coordinates: %v"
+
+	colname, row, err := SplitCellStr(cell)
+	if err != nil {
+		return -1, -1, fmt.Errorf(msg, cell, err)
+	}
+
+	// "22" --> -1, 22
+	if colname == "" {
+		return -1, row, nil
 	}
 
 	col, err := ColumnNameToNumber(colname)

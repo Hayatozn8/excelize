@@ -11,7 +11,6 @@ package excelize
 
 import (
 	"errors"
-	_ "fmt"
 	"reflect"
 )
 
@@ -74,44 +73,32 @@ func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
 }
 
 func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
-	// split row and col
-	// var vrow, vcol, hrow, hcol int
-
-	// if hcell == "" {
-	// 	hcol, hrow = -1, -1
-	// } else {
-	// 	hcol, hrow, err := CellNameToCoordinates(hcell)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
-	// if vcell == "" {
-	// 	vcol, vrow = -1, -1
-	// } else {
-	// 	vcol, vrow, err := CellNameToCoordinates(vcell)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
-	// // get rows
-	// rows, err := f.Rows(sheet)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// // get length of row (max row)
-	// maxRow = len(rows.rows)
-
-	hcol, hrow, err := CellNameToCoordinates(hcell)
+	hcol, hrow, err := CellStrToCoordinates(hcell)
 	if err != nil {
 		return nil, err
 	}
 
-	vcol, vrow, err := CellNameToCoordinates(vcell)
+	vcol, vrow, err := CellStrToCoordinates(vcell)
 	if err != nil {
 		return nil, err
+	}
+
+	// "22" --> MAX_INT, 22
+	// "A" --> 1, MAX_INT
+	if hcol == -1 {
+		hcol = int(^uint(0) >> 1)
+	}
+
+	if hrow == -1 {
+		hrow = int(^uint(0) >> 1)
+	}
+
+	if vcol == -1 {
+		vcol = int(^uint(0) >> 1)
+	}
+
+	if vrow == -1 {
+		vrow = int(^uint(0) >> 1)
 	}
 
 	// Normalize the coordinate area, such correct C1:B3 to B1:C3.
@@ -129,24 +116,7 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 	vcolIdx := vcol - 1
 	vrowIdx := vrow - 1
 
-	// 假设有：单元自动补全
-
-	// 单元格拆分 by ":"
-	// "a1:b4" [a1, b4] row,col,row,col
-	// "a1:" [a1,""] row,col
-	// "a1" [a1] row, col
-
-	// GetRows 获取所有有效行
-	// rows, err := f.Rows(sheet)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// if results := make([][]string, 0, 64)
-	// for i:=
-	// 从有效行有截取
-	// 从指定位置开始取值 超过的部分都是空的 行是空行， 列跳过
-
+	// Get sheet
 	xlsx, err := f.workSheetReader(sheet)
 	if err != nil {
 		return nil, err
@@ -156,7 +126,8 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 	maxRow := len(xlsx.SheetData.Row)
 	if hrow > maxRow {
 		return nil, nil
-	} else if vrow > maxRow {
+	}
+	if vrow > maxRow {
 		vrow = maxRow
 		vrowIdx = vrow - 1
 	}
@@ -166,10 +137,12 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 
 	nullRowCount := 0
 	currentVcolIdx := 0
-	resultIdx := 0
+	resultIdx := -1
 
 	d := f.sharedStringsReader()
 	for r := hrowIdx; r <= vrowIdx; r++ {
+		resultIdx++
+
 		//get row from sheet
 		sheetRow := xlsx.SheetData.Row[r]
 		maxCol := len(sheetRow.C)
@@ -177,9 +150,10 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 		//Prevent hcol out of maxCol
 		if hcol > maxCol {
 			nullRowCount++
-			results = append(results, make([]string, 0))
+			results[resultIdx] = make([]string, 0)
 			continue
-		} else if vrow > maxCol {
+		}
+		if vcol > maxCol {
 			currentVcolIdx = maxCol - 1
 		} else {
 			currentVcolIdx = vcolIdx
@@ -196,7 +170,6 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 
 		// save columns data
 		results[resultIdx] = columns
-		resultIdx++
 	}
 
 	// Return nil if all row is null
