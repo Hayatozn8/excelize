@@ -9,68 +9,62 @@
 
 package excelize
 
-import (
-	"errors"
-	"reflect"
-)
-
 // write tow dimension slice or array
 // evert element represents a row
-func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
-	rangeVal := reflect.ValueOf(values)
-	rangeValKind := rangeVal.Kind()
-	if rangeValKind != reflect.Slice && rangeValKind != reflect.Array {
-		return errors.New("pointer to slice expected")
-	}
+// func (f *File) SetRangeValue(sheet, axis string, values interface{}) error {
+// 	rangeVal := reflect.ValueOf(values)
+// 	rangeValKind := rangeVal.Kind()
+// 	if rangeValKind != reflect.Slice && rangeValKind != reflect.Array {
+// 		return errors.New("pointer to slice expected")
+// 	}
 
-	xlsx, err := f.workSheetReader(sheet)
-	if err != nil {
-		return err
-	}
+// 	xlsx, err := f.workSheetReader(sheet)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	startCol, startRow, err := CellNameToCoordinates(axis)
-	if err != nil {
-		return err
-	}
+// 	startCol, startRow, err := CellNameToCoordinates(axis)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	// a := [][]string{{"a","b","c"}, {"d", "r", "y", "t"}, {"c", "x"}, {"u"}}
-	// a := []interface{}{[]string{"a","b","c"}, 2, 3, []string{"s","x"}}
-	for i := 0; i < rangeVal.Len(); i++ {
-		rowVal := rangeVal.Index(i)
+// 	// a := [][]string{{"a","b","c"}, {"d", "r", "y", "t"}, {"c", "x"}, {"u"}}
+// 	// a := []interface{}{[]string{"a","b","c"}, 2, 3, []string{"s","x"}}
+// 	for i := 0; i < rangeVal.Len(); i++ {
+// 		rowVal := rangeVal.Index(i)
 
-		// a := []interface{}{[]string{"a","b","c"}, 2, 3, []string{"s","x"}}
-		rowValKind := rowVal.Kind()
-		if rowValKind == reflect.Interface {
-			rowVal = reflect.ValueOf(rowVal.Interface())
-			rowValKind = rowVal.Kind()
-		}
+// 		// a := []interface{}{[]string{"a","b","c"}, 2, 3, []string{"s","x"}}
+// 		rowValKind := rowVal.Kind()
+// 		if rowValKind == reflect.Interface {
+// 			rowVal = reflect.ValueOf(rowVal.Interface())
+// 			rowValKind = rowVal.Kind()
+// 		}
 
-		if rowValKind != reflect.Slice && rowValKind != reflect.Array {
-			cell, err := CoordinatesToCellName(startCol, startRow+i)
-			if err != nil {
-				return err
-			}
+// 		if rowValKind != reflect.Slice && rowValKind != reflect.Array {
+// 			cell, err := CoordinatesToCellName(startCol, startRow+i)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			if err := f.setCellValue(xlsx, cell, rowVal.Interface()); err != nil {
-				return err
-			}
-			continue
-		}
+// 			if err := f.setCellValue(xlsx, cell, rowVal.Interface()); err != nil {
+// 				return err
+// 			}
+// 			continue
+// 		}
+// 		for j := 0; j < rowVal.Len(); j++ {
+// 			cell, err := CoordinatesToCellName(startCol+j, startRow+i)
+// 			if err != nil {
+// 				return err
+// 			}
 
-		for j := 0; j < rowVal.Len(); j++ {
-			cell, err := CoordinatesToCellName(startCol+j, startRow+i)
-			if err != nil {
-				return err
-			}
+// 			if err := f.setCellValue(xlsx, cell, rowVal.Index(j).Interface()); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+// 	return nil
 
-			if err := f.setCellValue(xlsx, cell, rowVal.Index(j).Interface()); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-
-}
+// }
 
 func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 	hcol, hrow, err := CellStrToCoordinates(hcell)
@@ -178,4 +172,5 @@ func (f *File) GetRangeValue(sheet, hcell, vcell string) ([][]string, error) {
 	}
 
 	return results, nil
+
 }

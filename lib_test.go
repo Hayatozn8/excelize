@@ -1,6 +1,7 @@
 package excelize
 
 import (
+	"encoding/xml"
 	"fmt"
 	"strconv"
 	"strings"
@@ -23,7 +24,6 @@ var validColumns = []struct {
 	{Name: "AZ", Num: 26 + 26},
 	{Name: "ZZ", Num: 26 + 26*26},
 	{Name: "AAA", Num: 26 + 26*26 + 1},
-	{Name: "ZZZ", Num: 26 + 26*26 + 26*26*26},
 }
 
 var invalidColumns = []struct {
@@ -72,6 +72,8 @@ func TestColumnNameToNumber_Error(t *testing.T) {
 			assert.Equalf(t, col.Num, out, msg, col.Name)
 		}
 	}
+	_, err := ColumnNameToNumber("XFE")
+	assert.EqualError(t, err, "column number exceeds maximum limit")
 }
 
 func TestColumnNumberToName_OK(t *testing.T) {
@@ -94,6 +96,9 @@ func TestColumnNumberToName_Error(t *testing.T) {
 	if assert.Error(t, err) {
 		assert.Equal(t, "", out)
 	}
+
+	_, err = ColumnNumberToName(TotalColumns + 1)
+	assert.EqualError(t, err, "column number exceeds maximum limit")
 }
 
 func TestSplitCellName_OK(t *testing.T) {
@@ -172,6 +177,8 @@ func TestCellNameToCoordinates_Error(t *testing.T) {
 			assert.Equalf(t, -1, r, msg, cell)
 		}
 	}
+	_, _, err := CellNameToCoordinates("A1048577")
+	assert.EqualError(t, err, "row number exceeds maximum limit")
 }
 
 func TestCoordinatesToCellName_OK(t *testing.T) {
@@ -202,4 +209,22 @@ func TestCoordinatesToCellName_Error(t *testing.T) {
 			test(col, row)
 		}
 	}
+}
+
+func TestBytesReplace(t *testing.T) {
+	s := []byte{0x01}
+	assert.EqualValues(t, s, bytesReplace(s, []byte{}, []byte{}, 0))
+}
+
+func TestSetIgnorableNameSpace(t *testing.T) {
+	f := NewFile()
+	f.xmlAttr["xml_path"] = []xml.Attr{{}}
+	f.setIgnorableNameSpace("xml_path", 0, xml.Attr{Name: xml.Name{Local: "c14"}})
+	assert.EqualValues(t, "c14", f.xmlAttr["xml_path"][0].Value)
+}
+
+func TestStack(t *testing.T) {
+	s := NewStack()
+	assert.Equal(t, s.Peek(), nil)
+	assert.Equal(t, s.Pop(), nil)
 }
