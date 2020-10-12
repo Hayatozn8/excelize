@@ -49,6 +49,14 @@ func TestAdjustMergeCells(t *testing.T) {
 
 func TestAdjustAutoFilter(t *testing.T) {
 	f := NewFile()
+	assert.NoError(t, f.adjustAutoFilter(&xlsxWorksheet{
+		SheetData: xlsxSheetData{
+			Row: []xlsxRow{{Hidden: true, R: 2}},
+		},
+		AutoFilter: &xlsxAutoFilter{
+			Ref: "A1:A3",
+		},
+	}, rows, 1, -1))
 	// testing adjustAutoFilter with illegal cell coordinates.
 	assert.EqualError(t, f.adjustAutoFilter(&xlsxWorksheet{
 		AutoFilter: &xlsxAutoFilter{
@@ -113,4 +121,8 @@ func TestCoordinatesToAreaRef(t *testing.T) {
 	ref, err := f.coordinatesToAreaRef([]int{1, 1, 1, 1})
 	assert.NoError(t, err)
 	assert.EqualValues(t, ref, "A1:A1")
+}
+
+func TestSortCoordinates(t *testing.T) {
+	assert.EqualError(t, sortCoordinates(make([]int, 3)), "coordinates length must be 4")
 }
